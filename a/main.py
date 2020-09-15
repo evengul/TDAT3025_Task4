@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 
-# Result: "hello world    rld    rld    rld    rld    rld    rl"
+# Result: " hello world                                         "
 
 
 class LSTM_ManyMany(nn.Module):
@@ -28,16 +29,7 @@ class LSTM_ManyMany(nn.Module):
         return nn.functional.cross_entropy(self.logits(x), y.argmax(1))
 
 
-char_encodings = [
-    [1., 0., 0., 0., 0., 0., 0., 0.],  # ' '
-    [0., 1., 0., 0., 0., 0., 0., 0.],  # 'h'
-    [0., 0., 1., 0., 0., 0., 0., 0.],  # 'e'
-    [0., 0., 0., 1., 0., 0., 0., 0.],  # 'l'
-    [0., 0., 0., 0., 1., 0., 0., 0.],  # 'o'
-    [0., 0., 0., 0., 0., 1., 0., 0.],  # 'w'
-    [0., 0., 0., 0., 0., 0., 1., 0.],  # 'r'
-    [0., 0., 0., 0., 0., 0., 0., 1.]   # 'd'
-]
+char_encodings = np.eye(8)
 
 encoding_size = len(char_encodings)
 
@@ -55,7 +47,8 @@ x_train = torch.tensor([[char_encodings[0]],   # _
                         [char_encodings[6]],     # r
                         [char_encodings[3]],     # l
                         [char_encodings[7]],     # d
-                        [char_encodings[0]]])    # _
+                        [char_encodings[0]]],    # _
+                       dtype=torch.float)
 
 y_train = torch.tensor([char_encodings[1],     # h
                         char_encodings[2],     # e
@@ -69,13 +62,13 @@ y_train = torch.tensor([char_encodings[1],     # h
                         char_encodings[3],     # l
                         char_encodings[7],     # d
                         char_encodings[0],
-                        char_encodings[0]])
+                        char_encodings[0]], dtype=torch.float)
 
 model = LSTM_ManyMany(encoding_size)
 
 
-lr = 0.001
-epochs = 5000
+lr = 0.05
+epochs = 500
 optimizer = torch.optim.RMSprop(model.parameters(), lr)
 
 for epoch in range(epochs):
@@ -86,11 +79,11 @@ for epoch in range(epochs):
 
 model.reset()
 text = ' h'
-model.f(torch.tensor([[char_encodings[0]]]))
-y = model.f(torch.tensor([[char_encodings[1]]]))
+model.f(torch.tensor([[char_encodings[0]]], dtype=torch.float))
+y = model.f(torch.tensor([[char_encodings[1]]], dtype=torch.float))
 text += index_to_char[y.argmax(1)]
 for c in range(50):
-    y = model.f(torch.tensor([[char_encodings[y.argmax(1)]]]))
+    y = model.f(torch.tensor([[char_encodings[y.argmax(1)]]], dtype=torch.float))
     text += index_to_char[y.argmax(1)]
 print(text)
 
